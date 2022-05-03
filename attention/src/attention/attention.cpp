@@ -24,21 +24,23 @@ AttentionNode::AttentionNode() : rclcpp_lifecycle::LifecycleNode("graph_filliing
 
 void AttentionNode::GazeboCallback(const gazebo_msgs::msg::ModelStates::SharedPtr msg) {
     if (!graph_initialized_) return;
-
+    
     for (int i = 0; i < msg->name.size(); i++){
-      ros2_knowledge_graph_msgs::msg::Node object = ros2_knowledge_graph::new_node(msg->name.at(i), "object");
-      graph_->update_node(object);
-
-      geometry_msgs::msg::TransformStamped tf;
-      tf.header.frame_id = "map";
-      tf.header.stamp = this->get_clock()->now();
-      tf.child_frame_id = msg->name.at(i);
-      tf.transform.translation.x = msg->pose.at(i).position.x;
-      tf.transform.translation.y = msg->pose.at(i).position.y;
-      tf.transform.translation.z = msg->pose.at(i).position.z;
       
-      auto edge_tf = ros2_knowledge_graph::new_edge("map", msg->name.at(i), tf);
-      graph_->update_edge(edge_tf);
+        ros2_knowledge_graph_msgs::msg::Node object = ros2_knowledge_graph::new_node(msg->name[i], "object");
+        graph_->update_node(object);
+
+        geometry_msgs::msg::TransformStamped tf;
+        tf.header.frame_id = "map";
+        tf.header.stamp = this->get_clock()->now();
+        tf.child_frame_id = msg->name[i];
+        tf.transform.translation.x = msg->pose[i].position.x;
+        tf.transform.translation.y = msg->pose[i].position.y;
+        tf.transform.translation.z = msg->pose[i].position.z;
+        
+        auto edge_tf = ros2_knowledge_graph::new_edge("map", msg->name[i], tf, true);
+        graph_->update_edge(edge_tf);
+      
     }
 }
 
@@ -55,7 +57,7 @@ CallbackReturnT AttentionNode::on_configure(const rclcpp_lifecycle::State& state
 
     ros2_knowledge_graph_msgs::msg::Node map = ros2_knowledge_graph::new_node("map", "map");
     graph_->update_node(map);
-    //graph_initialized_ = true;
+    graph_initialized_ = true;
     return CallbackReturnT::SUCCESS;
 }
 CallbackReturnT AttentionNode::on_activate(const rclcpp_lifecycle::State& state) {
