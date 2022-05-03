@@ -1,4 +1,4 @@
-#include "attention/node_graph.hpp"
+#include "node_graph/node_graph.hpp"
 #include "gazebo_msgs/msg/model_states.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
