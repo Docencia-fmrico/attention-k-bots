@@ -60,15 +60,22 @@ include_directories(include)
 
 add_library(${PROJECT_NAME} SHARED
   src/attention/attention.cpp
+  src/attention/node_graph.cpp
 )
 
 add_executable(attention_main  src/attention_main.cpp)
 ament_target_dependencies(attention_main ${dependencies})
 
+add_executable(graph_node_main  src/graph_node_main.cpp)
+ament_target_dependencies(graph_node_main ${dependencies})
+
+
 target_link_libraries(attention_main ${PROJECT_NAME})
+target_link_libraries(graph_node_main ${PROJECT_NAME})
 
 install(TARGETS
   attention_main
+  graph_node_main
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
