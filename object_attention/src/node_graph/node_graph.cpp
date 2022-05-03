@@ -6,11 +6,13 @@
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "ros2_knowledge_graph/GraphNode.hpp"
 #include "ros2_knowledge_graph/graph_utils.hpp"
+#include "ros2_knowledge_graph/GraphNode.hpp"
 #include "ros2_knowledge_graph_msgs/msg/edge.hpp"
 #include "ros2_knowledge_graph_msgs/msg/graph.hpp"
 #include "ros2_knowledge_graph_msgs/msg/node.hpp"
+#include "ros2_knowledge_graph_msgs/msg/graph_update.hpp"
+
 using std::placeholders::_1;
 
 using CallbackReturnT = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
@@ -22,15 +24,16 @@ CallbackReturnT NodeGraph::on_configure(const rclcpp_lifecycle::State& state) {
   RCLCPP_INFO(get_logger(), "[%s] Configuring from [%s] state...", get_name(),
               state.label().c_str());
 
-  ros2_knowledge_graph_msgs::msg::Node robot = ros2_knowledge_graph::new_node("kbot", "robot");
-  ros2_knowledge_graph_msgs::msg::Node table = ros2_knowledge_graph::new_node("table", "object");
+  
 
-  graph_->update_node(robot);
-  graph_->update_node(table);
+  auto edge_tf = graph_->get_edges<geometry_msgs::msg::TransformStamped>("map", "bookshelf_4");
 
-  ros2_knowledge_graph_msgs::msg::Edge edge = ros2_knowledge_graph::new_edge<std::string>("kbot", "table", "sees");
+  
+  auto content_tf_opt = ros2_knowledge_graph::get_content<geometry_msgs::msg::TransformStamped>(edge_tf[0].content);
 
-  graph_->update_edge(edge);
+  //std::cout << content_tf_opt.has_value()<< std::endl;
+
+ 
 
   return CallbackReturnT::SUCCESS;
 }
