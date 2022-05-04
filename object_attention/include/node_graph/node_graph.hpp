@@ -8,6 +8,7 @@
 #include "lifecycle_msgs/msg/state.hpp"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/buffer.h"
+#include "trajectory_msgs/msg/joint_trajectory.hpp"
 
 class NodeGraph : public rclcpp_lifecycle::LifecycleNode {
  public:
@@ -27,7 +28,7 @@ class NodeGraph : public rclcpp_lifecycle::LifecycleNode {
   std::shared_ptr<ros2_knowledge_graph::GraphNode> graph_;
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_{nullptr};
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
-  
+  rclcpp_lifecycle::LifecyclePublisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_cmd_pub_;
 };
 
 #endif  // NODE_GRAPH_HPP_
