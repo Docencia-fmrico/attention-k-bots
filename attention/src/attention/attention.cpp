@@ -31,14 +31,14 @@ void AttentionNode::GazeboCallback(const gazebo_msgs::msg::ModelStates::SharedPt
         graph_->update_node(object);
 
         geometry_msgs::msg::TransformStamped tf;
-        tf.header.frame_id = "map";
+        tf.header.frame_id = "odom";
         tf.header.stamp = this->get_clock()->now();
         tf.child_frame_id = msg->name[i];
         tf.transform.translation.x = msg->pose[i].position.x;
         tf.transform.translation.y = msg->pose[i].position.y;
         tf.transform.translation.z = msg->pose[i].position.z;
         
-        auto edge_tf = ros2_knowledge_graph::new_edge("map", msg->name[i], tf, true);
+        auto edge_tf = ros2_knowledge_graph::new_edge("odom", msg->name[i], tf, true);
         graph_->update_edge(edge_tf);
       
     }
@@ -55,7 +55,7 @@ CallbackReturnT AttentionNode::on_configure(const rclcpp_lifecycle::State& state
     ros2_knowledge_graph_msgs::msg::Node robot = ros2_knowledge_graph::new_node("kbot", "robot");
     graph_->update_node(robot);
 
-    ros2_knowledge_graph_msgs::msg::Node map = ros2_knowledge_graph::new_node("map", "map");
+    ros2_knowledge_graph_msgs::msg::Node map = ros2_knowledge_graph::new_node("odom", "odom");
     graph_->update_node(map);
     graph_initialized_ = true;
     return CallbackReturnT::SUCCESS;
