@@ -76,26 +76,25 @@ CallbackReturnT NodeGraph::on_error(const rclcpp_lifecycle::State& state) {
 
 std::vector<std::string> NodeGraph::find_objects(std::string object_to_find) {
   std::vector<std::string> all_names = graph_->get_node_names();
-  std::cout << graph_->get_num_nodes() << std::endl; // BORRAR
   std::vector<std::string> names;
   for (std::string name : all_names) {
-    std::cout << "Name: " << name << std::endl; // BORRAR
     if (name.find(object_to_find) != std::string::npos) {
       names.push_back(name);
-      std::cout << "ENTRA" << std::endl; // BORRAR
     }
   }
 
   return names;
 }
 
-std::map<std::string, std::vector<float>> NodeGraph::select_object() {
+void NodeGraph::select_object() {
+  objects_names_.clear();
+  objects_angle_.clear();
   std::vector<std::string> objects_found = find_objects("cabinet");
-  std::map<std::string, std::vector<float>> objects_to_watch;
+  std::sort(objects_found.begin(), objects_found.end());
 
   for (std::string fromFrameRel : objects_found) {
 
-    std::cout << "fromFrameRel: " << fromFrameRel << std::endl; // BORRAR
+
     // std::string fromFrameRel = "cabinet";
     std::string toFrameRel = "head_1_link";
     geometry_msgs::msg::TransformStamped transformStamped;
@@ -121,74 +120,81 @@ std::map<std::string, std::vector<float>> NodeGraph::select_object() {
           atan2(transformStamped.transform.translation.z, transformStamped.transform.translation.x);
 
       if (-M_PI_2 < pan && pan < M_PI_2) {
+        objects_names_.push_back(fromFrameRel);
         std::vector<float> translation;
         translation.push_back(pan);
         translation.push_back(tilt);
-        objects_to_watch[fromFrameRel] = translation;
+        objects_angle_.push_back(translation);
       }
     }
   }
-
-  return objects_to_watch;
 }
 
 void NodeGraph::look_for_object() {
-  trajectory_msgs::msg::JointTrajectory command_msg;
-  trajectory_msgs::msg::JointTrajectoryPoint point;
 
-  command_msg.header.stamp = now();
-  command_msg.joint_names.push_back("head_1_joint");
-  command_msg.joint_names.push_back("head_2_joint");
+  if (now().seconds() - prev_exploration_ > 8){
+    prev_exploration_ = now().seconds();
+    trajectory_msgs::msg::JointTrajectory command_msg;
+    trajectory_msgs::msg::JointTrajectoryPoint point;
 
-  point.positions.resize(2);
-  point.velocities.resize(2);
-  point.accelerations.resize(2);
-  point.effort.resize(2);
-  point.velocities[0] = 0.15;
-  point.velocities[1] = 0.15;
-  point.accelerations[0] = 0.1;
-  point.accelerations[1] = 0.1;
-  point.effort[0] = 0.1;
-  point.effort[1] = 0.1;
+    command_msg.header.stamp = now();
+    command_msg.joint_names.push_back("head_1_joint");
+    command_msg.joint_names.push_back("head_2_joint");
 
-  point.time_from_start = rclcpp::Duration(2s);
+    point.positions.resize(2);
+    point.velocities.resize(2);
+    point.accelerations.resize(2);
+    point.effort.resize(2);
+    point.velocities[0] = 0.15;
+    point.velocities[1] = 0.15;
+    point.accelerations[0] = 0.1;
+    point.accelerations[1] = 0.1;
+    point.effort[0] = 0.1;
+    point.effort[1] = 0.1;
 
-  // Create trajectory
-  point.positions[0] = -M_PI_2;
-  point.positions[1] = -M_PI_2 / 3;
-  command_msg.points.push_back(point);
-  // joint_cmd_pub_->publish(command_msg);
+    point.time_from_start = rclcpp::Duration(2s);
 
-  point.time_from_start = rclcpp::Duration(4s);
-  point.positions[0] = -M_PI_2;
-  point.positions[1] = 0.0;
-  command_msg.points.push_back(point);
+    // Create trajectory
+    point.positions[0] = -M_PI_2;
+    point.positions[1] = -M_PI_2 / 3;
+    command_msg.points.push_back(point);
+    // joint_cmd_pub_->publish(command_msg);
 
-  point.time_from_start = rclcpp::Duration(6s);
-  point.positions[0] = M_PI_2;
-  point.positions[1] = 0.0;
-  command_msg.points.push_back(point);
+    point.time_from_start = rclcpp::Duration(4s);
+    point.positions[0] = -M_PI_2;
+    point.positions[1] = 0.0;
+    command_msg.points.push_back(point);
 
-  point.time_from_start = rclcpp::Duration(8s);
-  point.positions[0] = M_PI_2;
-  point.positions[1] = -M_PI_2 / 3;
-  command_msg.points.push_back(point);
+    point.time_from_start = rclcpp::Duration(6s);
+    point.positions[0] = M_PI_2;
+    point.positions[1] = 0.0;
+    command_msg.points.push_back(point);
 
-  joint_cmd_pub_->publish(command_msg);
+    point.time_from_start = rclcpp::Duration(8s);
+    point.positions[0] = M_PI_2;
+    point.positions[1] = -M_PI_2 / 3;
+    command_msg.points.push_back(point);
 
+    joint_cmd_pub_->publish(command_msg);
+  }
   //std::this_thread::sleep_for(std::chrono::milliseconds(8000));
 }
 
 void NodeGraph::watch_object() {}
 
 void NodeGraph::do_work() {
-  std::map<std::string, std::vector<float>> objects_to_watch = select_object();
+  select_object();
 
-  if (objects_to_watch.empty()) {
+  std::cout << "Size: " << objects_names_.size() << std::endl;
+  if (objects_names_.empty()) {
     look_for_object();
   } else {
-    for (const auto object : objects_to_watch) {
-
+    if (objects_names_.size() != size_points_){
+      size_points_ = objects_names_.size();
+      object_to_see = 0;
+      prev_look_to_ = 0;
+    } else {
+      
       trajectory_msgs::msg::JointTrajectory command_msg;
       trajectory_msgs::msg::JointTrajectoryPoint point;
 
@@ -200,8 +206,8 @@ void NodeGraph::do_work() {
       point.velocities.resize(2);
       point.accelerations.resize(2);
       point.effort.resize(2);
-      point.positions[0] = object.second.at(0);
-      point.positions[1] = object.second.at(1);
+      point.positions[0] = objects_angle_[object_to_see].at(0);
+      point.positions[1] = objects_angle_[object_to_see].at(1);
       point.velocities[0] = 0.1;
       point.velocities[1] = 0.1;
       point.accelerations[0] = 0.1;
@@ -212,11 +218,13 @@ void NodeGraph::do_work() {
       point.time_from_start = rclcpp::Duration(1s);
       command_msg.points.push_back(point);
 
-      std::cout << "Object = " << object.first << std::endl; // BORRAR
-      std::cout << "    " << object.second.at(0) << ", " << object.second.at(1) << std::endl; // BORRAR
-
       joint_cmd_pub_->publish(command_msg);
       std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+      if (now().seconds() - prev_look_to_ > 2){
+        prev_look_to_ = now().seconds();
+        object_to_see++;
+        if (object_to_see >= size_points_) object_to_see = 0;
+      }
     }
   }
 

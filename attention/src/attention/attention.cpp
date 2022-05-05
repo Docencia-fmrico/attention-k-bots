@@ -32,7 +32,7 @@ void AttentionNode::GazeboCallback(const gazebo_msgs::msg::ModelStates::SharedPt
 
         geometry_msgs::msg::TransformStamped tf;
         tf.header.frame_id = "odom";
-        tf.header.stamp = this->get_clock()->now();
+        tf.header.stamp = now();
         tf.child_frame_id = msg->name[i];
         tf.transform.translation.x = msg->pose[i].position.x;
         tf.transform.translation.y = msg->pose[i].position.y;

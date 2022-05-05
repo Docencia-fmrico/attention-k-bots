@@ -24,7 +24,7 @@ class NodeGraph : public rclcpp_lifecycle::LifecycleNode {
   CallbackReturnT on_error(const rclcpp_lifecycle::State& state);
   void do_work();
   std::vector<std::string> find_objects(std::string object_to_find);
-  std::map<std::string, std::vector<float>> select_object();
+  void select_object();
   void look_for_object();
   void watch_object();
 
@@ -33,6 +33,14 @@ class NodeGraph : public rclcpp_lifecycle::LifecycleNode {
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_{nullptr};
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
   rclcpp_lifecycle::LifecyclePublisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_cmd_pub_;
+  
+  std::vector<std::string> objects_names_;
+  std::vector<std::vector<float>> objects_angle_;
+
+  double prev_exploration_ = 0.0;
+  double prev_look_to_ = 0.0;
+  int size_points_ = 0;
+  int object_to_see = 0;
   float MAX_DISTANCE = 5;
 };
 
