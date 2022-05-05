@@ -11,6 +11,7 @@ int main(int argc, char** argv) {
   rclcpp::Rate rate(30);
   while (rclcpp::ok()) {
     node->do_work();
+    //node->look_for_object();
 
     rclcpp::spin_some(node->get_node_base_interface());
     rate.sleep();

@@ -36,7 +36,7 @@ void AttentionNode::GazeboCallback(const gazebo_msgs::msg::ModelStates::SharedPt
         tf.child_frame_id = msg->name[i];
         tf.transform.translation.x = msg->pose[i].position.x;
         tf.transform.translation.y = msg->pose[i].position.y;
-        tf.transform.translation.z = msg->pose[i].position.z;
+        tf.transform.translation.z = msg->pose[i].position.z + 0.7;
         
         auto edge_tf = ros2_knowledge_graph::new_edge("odom", msg->name[i], tf, true);
         graph_->update_edge(edge_tf);
