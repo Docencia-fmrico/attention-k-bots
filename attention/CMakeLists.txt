@@ -62,17 +62,17 @@ add_library(${PROJECT_NAME} SHARED
   src/attention/attention.cpp
 )
 
-add_executable(attention_main  src/attention_main.cpp)
-ament_target_dependencies(attention_main ${dependencies})
+add_executable(attention_node  src/attention_node.cpp)
+ament_target_dependencies(attention_node ${dependencies})
 
 
 
 
-target_link_libraries(attention_main ${PROJECT_NAME})
+target_link_libraries(attention_node ${PROJECT_NAME})
 
 
 install(TARGETS
-  attention_main
+  attention_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

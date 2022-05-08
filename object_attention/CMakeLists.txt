@@ -59,18 +59,18 @@ set(dependencies
 include_directories(include)
 
 add_library(${PROJECT_NAME} SHARED
-  src/node_graph/node_graph.cpp
+  src/stare_at_object/stare_at_object.cpp
 )
 
 
-add_executable(graph_node_main  src/graph_node_main.cpp)
-ament_target_dependencies(graph_node_main ${dependencies})
+add_executable(stare_node  src/stare_node.cpp)
+ament_target_dependencies(stare_node ${dependencies})
 
 
-target_link_libraries(graph_node_main ${PROJECT_NAME})
+target_link_libraries(stare_node ${PROJECT_NAME})
 
 install(TARGETS
-  graph_node_main
+  stare_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

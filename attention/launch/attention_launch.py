@@ -25,8 +25,8 @@ def generate_launch_description():
     # Specify the actions
     move_cmd = Node(
         package='attention',
-        executable='attention_main',
-        name='attention_main',
+        executable='attention_node',
+        name='attention_node',
         output='screen',
         parameters=[objects_file])
 

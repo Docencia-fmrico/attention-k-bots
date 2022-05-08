@@ -25,8 +25,8 @@ def generate_launch_description():
     # Specify the actions
     move_cmd = Node(
         package='object_attention',
-        executable='graph_node_main',
-        name='graph_node_main',
+        executable='stare_node',
+        name='stare_node',
         output='screen',
         parameters=[objects_file])
 

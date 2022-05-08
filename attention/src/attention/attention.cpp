@@ -25,6 +25,8 @@ AttentionNode::AttentionNode() : rclcpp_lifecycle::LifecycleNode("graph_filliing
 void AttentionNode::GazeboCallback(const gazebo_msgs::msg::ModelStates::SharedPtr msg) {
   if (!graph_initialized_) return;
 
+
+  // Loop through all existing objects in the world and connect them to the odom node
   for (int i = 0; i < msg->name.size(); i++) {
     ros2_knowledge_graph_msgs::msg::Node object =
         ros2_knowledge_graph::new_node(msg->name[i], "object");
@@ -41,6 +43,7 @@ void AttentionNode::GazeboCallback(const gazebo_msgs::msg::ModelStates::SharedPt
     auto edge_tf = ros2_knowledge_graph::new_edge("odom", msg->name[i], tf, true);
     graph_->update_edge(edge_tf);
 
+    // Connect the objects we want to see to the kbot node
     for (std::string name : objects_to_see_) {
       if (msg->name[i].find(name) != std::string::npos) {
         auto edge_string =
@@ -49,6 +52,7 @@ void AttentionNode::GazeboCallback(const gazebo_msgs::msg::ModelStates::SharedPt
       }
     }
   }
+  // If an object is removed from the scene, the arc and node related to that object are removed from the graph
   std::vector<std::string> objects = msg->name;
   objects.push_back("kbot");
   objects.push_back("odom");
@@ -78,6 +82,7 @@ CallbackReturnT AttentionNode::on_configure(const rclcpp_lifecycle::State& state
 
   graph_ = std::make_shared<ros2_knowledge_graph::GraphNode>(shared_from_this());
 
+
   ros2_knowledge_graph_msgs::msg::Node robot = ros2_knowledge_graph::new_node("kbot", "robot");
   graph_->update_node(robot);
 
@@ -85,6 +90,8 @@ CallbackReturnT AttentionNode::on_configure(const rclcpp_lifecycle::State& state
   graph_->update_node(map);
   graph_initialized_ = true;
 
+  // Read the objects names that we want to see from a parameter file
+  
   this->declare_parameter("objects");
   objects_to_see_ = this->get_parameter("objects").as_string_array();
 

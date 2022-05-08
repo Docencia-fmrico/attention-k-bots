@@ -1,4 +1,4 @@
-attention_main:
+attention_node:
   ros__parameters:
     use_sim_time: true
     objects: ["cabinet", "bookshelf"]

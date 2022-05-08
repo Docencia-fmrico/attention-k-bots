@@ -1,4 +1,4 @@
-graph_node_main:
+stare_node:
   ros__parameters:
     use_sim_time: true
     distance: 5.0

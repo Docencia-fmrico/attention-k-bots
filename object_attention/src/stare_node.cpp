@@ -1,8 +1,8 @@
-#include "node_graph/node_graph.hpp"
+#include "stare_at_object/stare_at_object.hpp"
 
 int main(int argc, char** argv) {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<NodeGraph>();
+  auto node = std::make_shared<StareNode>();
 
   node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
   rclcpp::spin_some(node->get_node_base_interface());

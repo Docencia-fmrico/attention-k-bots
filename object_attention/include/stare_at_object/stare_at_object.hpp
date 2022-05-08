@@ -1,6 +1,6 @@
-#ifndef NODE_GRAPH_HPP_
+#ifndef STARE_AT_OBJECT_HPP_
 
-#define NODE_GRAPH_HPP_
+#define STARE_AT_OBJECT_HPP_
 
 #include "ros2_knowledge_graph/GraphNode.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -10,9 +10,9 @@
 #include "tf2_ros/buffer.h"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 
-class NodeGraph : public rclcpp_lifecycle::LifecycleNode {
+class StareNode : public rclcpp_lifecycle::LifecycleNode {
  public:
-  NodeGraph();
+  StareNode();
 
   using CallbackReturnT = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
@@ -43,4 +43,4 @@ class NodeGraph : public rclcpp_lifecycle::LifecycleNode {
   int object_to_see = 0;
 };
 
-#endif  // NODE_GRAPH_HPP_
+#endif  // STARE_AT_OBJECT_HPP_

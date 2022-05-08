@@ -1,4 +1,4 @@
-#include "node_graph/node_graph.hpp"
+#include "stare_at_object/stare_at_object.hpp"
 
 #include <math.h>
 #include <time.h>
@@ -24,12 +24,12 @@ using std::placeholders::_1;
 using namespace std::chrono_literals;
 using CallbackReturnT = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
-NodeGraph::NodeGraph() : rclcpp_lifecycle::LifecycleNode("node_graph") {
+StareNode::StareNode() : rclcpp_lifecycle::LifecycleNode("node_graph") {
   tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
   transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 }
 
-CallbackReturnT NodeGraph::on_configure(const rclcpp_lifecycle::State& state) {
+CallbackReturnT StareNode::on_configure(const rclcpp_lifecycle::State& state) {
   joint_cmd_pub_ = create_publisher<trajectory_msgs::msg::JointTrajectory>(
       "/head_controller/joint_trajectory", 100);
 
@@ -38,6 +38,8 @@ CallbackReturnT NodeGraph::on_configure(const rclcpp_lifecycle::State& state) {
   RCLCPP_INFO(get_logger(), "[%s] Configuring from [%s] state...", get_name(),
               state.label().c_str());
 
+  // Read the time we want to be looking at the object and the range of vision from a parameter file
+
   this->declare_parameter("time");
   fovea_time_ = this->get_parameter("time").as_double();
 
@@ -45,41 +47,42 @@ CallbackReturnT NodeGraph::on_configure(const rclcpp_lifecycle::State& state) {
   distance_ = this->get_parameter("distance").as_double();
   return CallbackReturnT::SUCCESS;
 }
-CallbackReturnT NodeGraph::on_activate(const rclcpp_lifecycle::State& state) {
+CallbackReturnT StareNode::on_activate(const rclcpp_lifecycle::State& state) {
   joint_cmd_pub_->on_activate();
   RCLCPP_INFO(get_logger(), "[%s] Activating from [%s] state...", get_name(),
               state.label().c_str());
   return CallbackReturnT::SUCCESS;
 }
 
-CallbackReturnT NodeGraph::on_deactivate(const rclcpp_lifecycle::State& state) {
+CallbackReturnT StareNode::on_deactivate(const rclcpp_lifecycle::State& state) {
   RCLCPP_INFO(get_logger(), "[%s] Deactivating from [%s] state...", get_name(),
               state.label().c_str());
 
   return CallbackReturnT::SUCCESS;
 }
 
-CallbackReturnT NodeGraph::on_cleanup(const rclcpp_lifecycle::State& state) {
+CallbackReturnT StareNode::on_cleanup(const rclcpp_lifecycle::State& state) {
   RCLCPP_INFO(get_logger(), "[%s] Cleanning Up from [%s] state...", get_name(),
               state.label().c_str());
 
   return CallbackReturnT::SUCCESS;
 }
 
-CallbackReturnT NodeGraph::on_shutdown(const rclcpp_lifecycle::State& state) {
+CallbackReturnT StareNode::on_shutdown(const rclcpp_lifecycle::State& state) {
   RCLCPP_INFO(get_logger(), "[%s] Shutting Down from [%s] state...", get_name(),
               state.label().c_str());
 
   return CallbackReturnT::SUCCESS;
 }
 
-CallbackReturnT NodeGraph::on_error(const rclcpp_lifecycle::State& state) {
+CallbackReturnT StareNode::on_error(const rclcpp_lifecycle::State& state) {
   RCLCPP_INFO(get_logger(), "[%s] Shutting Down from [%s] state...", get_name(),
               state.label().c_str());
   return CallbackReturnT::SUCCESS;
 }
 
-std::vector<std::string> NodeGraph::find_objects() {
+// Save the names of the objects to look at in a vector
+std::vector<std::string> StareNode::find_objects() {
   std::vector<std::string> all_names = graph_->get_node_names();
   std::vector<std::string> names;
 
@@ -99,7 +102,10 @@ std::vector<std::string> NodeGraph::find_objects() {
   return names;
 }
 
-void NodeGraph::select_object() {
+// Select the object to look at. We calculate the transform from the robot to the object and check
+// if it meets the distance condition and is within the rotation angle of the robot head
+
+void StareNode::select_object() {
   objects_names_.clear();
   objects_angle_.clear();
   std::vector<std::string> objects_found = find_objects();
@@ -111,8 +117,6 @@ void NodeGraph::select_object() {
 
     try {
       transformStamped = tf_buffer_->lookupTransform(toFrameRel, fromFrameRel, tf2::TimePointZero);
-      // transformStamped = tf_buffer_->lookupTransform(toFrameRel, fromFrameRel,
-      // this->get_clock()->now(), rclcpp::Duration(1,0));
     } catch (tf2::TransformException& ex) {
       RCLCPP_INFO(this->get_logger(), "Could not transform %s to %s: %s", toFrameRel.c_str(),
                   fromFrameRel.c_str(), ex.what());
@@ -145,7 +149,8 @@ void NodeGraph::select_object() {
   }
 }
 
-void NodeGraph::look_for_object() {
+// If the objects are not within the vision range, do a "scan"
+void StareNode::look_for_object() {
   if (now().seconds() - prev_exploration_ > 8) {
     prev_exploration_ = now().seconds();
     trajectory_msgs::msg::JointTrajectory command_msg;
@@ -172,7 +177,6 @@ void NodeGraph::look_for_object() {
     point.positions[0] = -M_PI_2;
     point.positions[1] = -M_PI_2 / 3;
     command_msg.points.push_back(point);
-    // joint_cmd_pub_->publish(command_msg);
 
     point.time_from_start = rclcpp::Duration(4s);
     point.positions[0] = -M_PI_2;
@@ -193,12 +197,15 @@ void NodeGraph::look_for_object() {
   }
 }
 
-void NodeGraph::do_work() {
+void StareNode::do_work() {
   select_object();
 
+  // "scan"
   if (objects_names_.empty()) {
     look_for_object();
-  } else {
+  }
+  // Stare at object(s)
+  else {
     if (objects_names_.size() != size_points_) {
       size_points_ = objects_names_.size();
       object_to_see = 0;
@@ -206,6 +213,7 @@ void NodeGraph::do_work() {
     } else {
       trajectory_msgs::msg::JointTrajectory command_msg;
       trajectory_msgs::msg::JointTrajectoryPoint point;
+      std::cout << "objects to see: " << objects_names_[object_to_see] << std::endl;
 
       command_msg.header.stamp = now();
       command_msg.joint_names.push_back("head_1_joint");
@@ -234,6 +242,7 @@ void NodeGraph::do_work() {
             "kbot", objects_names_[object_to_see], "looking_at");
         graph_->update_edge(edge_string);
       }
+      // Time to stare in case that there are several objects
       if (now().seconds() - prev_look_to_ > fovea_time_) {
         if (graph_->exist_node(objects_names_[object_to_see])) {
           auto edges_object = graph_->get_edges<std::string>("kbot", objects_names_[object_to_see]);
