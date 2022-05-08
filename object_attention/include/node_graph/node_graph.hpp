@@ -23,10 +23,9 @@ class NodeGraph : public rclcpp_lifecycle::LifecycleNode {
   CallbackReturnT on_shutdown(const rclcpp_lifecycle::State& state);
   CallbackReturnT on_error(const rclcpp_lifecycle::State& state);
   void do_work();
-  std::vector<std::string> find_objects(std::string object_to_find);
+  std::vector<std::string> find_objects();
   void select_object();
   void look_for_object();
-  void watch_object();
 
  private:
   std::shared_ptr<ros2_knowledge_graph::GraphNode> graph_;

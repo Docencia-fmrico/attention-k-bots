@@ -74,12 +74,21 @@ CallbackReturnT NodeGraph::on_error(const rclcpp_lifecycle::State& state) {
   return CallbackReturnT::SUCCESS;
 }
 
-std::vector<std::string> NodeGraph::find_objects(std::string object_to_find) {
+std::vector<std::string> NodeGraph::find_objects() {
   std::vector<std::string> all_names = graph_->get_node_names();
   std::vector<std::string> names;
+
   for (std::string name : all_names) {
-    if (name.find(object_to_find) != std::string::npos) {
-      names.push_back(name);
+    if (graph_->exist_node(name)) {
+      auto edges_object = graph_->get_edges<std::string>("kbot", name);
+      if (!edges_object.empty()) {
+        for (auto edge : edges_object) {
+          if (edge.content.string_value == "want_see") {
+            std::cout << edge.target_node_id << std::endl;
+            names.push_back(edge.target_node_id);
+          }
+        }
+      }
     }
   }
 
@@ -89,14 +98,11 @@ std::vector<std::string> NodeGraph::find_objects(std::string object_to_find) {
 void NodeGraph::select_object() {
   objects_names_.clear();
   objects_angle_.clear();
-  std::vector<std::string> objects_found = find_objects("cabinet");
+  std::vector<std::string> objects_found = find_objects();
   std::sort(objects_found.begin(), objects_found.end());
 
   for (std::string fromFrameRel : objects_found) {
-
-
-    // std::string fromFrameRel = "cabinet";
-    std::string toFrameRel = "head_1_link";
+    std::string toFrameRel = "torso_lift_link";
     geometry_msgs::msg::TransformStamped transformStamped;
 
     try {
@@ -113,26 +119,30 @@ void NodeGraph::select_object() {
         sqrt(transformStamped.transform.translation.y * transformStamped.transform.translation.y +
              transformStamped.transform.translation.x * transformStamped.transform.translation.x);
 
-    if (distance <= MAX_DISTANCE) {
-      float pan =
-          atan2(transformStamped.transform.translation.y, transformStamped.transform.translation.x);
-      float tilt =
-          atan2(transformStamped.transform.translation.z, transformStamped.transform.translation.x);
+    float pan =
+        atan2(transformStamped.transform.translation.y, transformStamped.transform.translation.x);
+    float tilt =
+        atan2(transformStamped.transform.translation.z, transformStamped.transform.translation.x);
 
-      if (-M_PI_2 < pan && pan < M_PI_2) {
-        objects_names_.push_back(fromFrameRel);
-        std::vector<float> translation;
-        translation.push_back(pan);
-        translation.push_back(tilt);
-        objects_angle_.push_back(translation);
+    if (distance <= MAX_DISTANCE && (-M_PI_2 < pan && pan < M_PI_2)) {
+      objects_names_.push_back(fromFrameRel);
+      std::vector<float> translation;
+      translation.push_back(pan);
+      translation.push_back(tilt);
+      objects_angle_.push_back(translation);
+    } else {
+      auto edges_object = graph_->get_edges<std::string>("kbot", fromFrameRel);
+      if (!edges_object.empty()) {
+        for (auto edge : edges_object) {
+          if (edge.content.string_value == "looking_at") graph_->remove_edge(edge);
+        }
       }
     }
   }
 }
 
 void NodeGraph::look_for_object() {
-
-  if (now().seconds() - prev_exploration_ > 8){
+  if (now().seconds() - prev_exploration_ > 8) {
     prev_exploration_ = now().seconds();
     trajectory_msgs::msg::JointTrajectory command_msg;
     trajectory_msgs::msg::JointTrajectoryPoint point;
@@ -177,10 +187,7 @@ void NodeGraph::look_for_object() {
 
     joint_cmd_pub_->publish(command_msg);
   }
-  //std::this_thread::sleep_for(std::chrono::milliseconds(8000));
 }
-
-void NodeGraph::watch_object() {}
 
 void NodeGraph::do_work() {
   select_object();
@@ -189,12 +196,11 @@ void NodeGraph::do_work() {
   if (objects_names_.empty()) {
     look_for_object();
   } else {
-    if (objects_names_.size() != size_points_){
+    if (objects_names_.size() != size_points_) {
       size_points_ = objects_names_.size();
       object_to_see = 0;
       prev_look_to_ = 0;
     } else {
-      
       trajectory_msgs::msg::JointTrajectory command_msg;
       trajectory_msgs::msg::JointTrajectoryPoint point;
 
@@ -219,8 +225,21 @@ void NodeGraph::do_work() {
       command_msg.points.push_back(point);
 
       joint_cmd_pub_->publish(command_msg);
-      std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-      if (now().seconds() - prev_look_to_ > 2){
+
+      if (graph_->exist_node(objects_names_[object_to_see])) {
+        auto edge_string = ros2_knowledge_graph::new_edge<std::string>(
+            "kbot", objects_names_[object_to_see], "looking_at");
+        graph_->update_edge(edge_string);
+      }
+      if (now().seconds() - prev_look_to_ > 3) {
+        if (graph_->exist_node(objects_names_[object_to_see])) {
+          auto edges_object = graph_->get_edges<std::string>("kbot", objects_names_[object_to_see]);
+          if (!edges_object.empty()) {
+            for (auto edge : edges_object) {
+              if (edge.content.string_value == "looking_at") graph_->remove_edge(edge);
+            }
+          }
+        }
         prev_look_to_ = now().seconds();
         object_to_see++;
         if (object_to_see >= size_points_) object_to_see = 0;
@@ -228,8 +247,8 @@ void NodeGraph::do_work() {
     }
   }
 
-  //rclcpp::Time start_watching_time = this->get_clock()->now();
-  // while((this->get_clock()->now() - start_watching_time) < 1.0) {  }
+  // rclcpp::Time start_watching_time = this->get_clock()->now();
+  //  while((this->get_clock()->now() - start_watching_time) < 1.0) {  }
 
   // std::cout << "X: " << transformStamped.transform.translation.x
   // << " Y: " << transformStamped.transform.translation.y

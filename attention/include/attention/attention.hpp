@@ -27,6 +27,7 @@ class AttentionNode : public rclcpp_lifecycle::LifecycleNode {
     std::shared_ptr<ros2_knowledge_graph::GraphNode> graph_;
     bool graph_initialized_ = false;
     rclcpp::Subscription<gazebo_msgs::msg::ModelStates>::SharedPtr gazeboSub_;
+    std::vector<std::string> objects_to_see_;
 };
 
 #endif  // ATTENTION__ATTENTION_HPP_

@@ -8,7 +8,7 @@ int main(int argc, char** argv) {
   rclcpp::spin_some(node->get_node_base_interface());
   node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
 
-  rclcpp::Rate rate(30);
+  rclcpp::Rate rate(10);
   while (rclcpp::ok()) {
     node->do_work();
     //node->look_for_object();
