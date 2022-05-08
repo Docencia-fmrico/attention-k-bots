@@ -58,18 +58,15 @@ void AttentionNode::GazeboCallback(const gazebo_msgs::msg::ModelStates::SharedPt
   for (std::string name : all_names) {
     std::vector<std::string>::iterator it = std::find(objects.begin(), objects.end(), name);
     if (it == objects.end()) {
-
       auto edges_ret_tf = graph_->get_edges<geometry_msgs::msg::TransformStamped>("odom", name);
-			if (! edges_ret_tf.empty()) {
-				for (auto edge : edges_ret_tf) graph_->remove_edge(edge);
-			}
+      if (!edges_ret_tf.empty()) {
+        for (auto edge : edges_ret_tf) graph_->remove_edge(edge);
+      }
 
-			auto edges_object = graph_->get_edges<std::string>("kbot", name);
-			if (! edges_object.empty()) {
-				for (auto edge : edges_object) graph_->remove_edge(edge);
-			}
-
-      std::cout << "NODO BORRADO: " << name << std::endl;
+      auto edges_object = graph_->get_edges<std::string>("kbot", name);
+      if (!edges_object.empty()) {
+        for (auto edge : edges_object) graph_->remove_edge(edge);
+      }
       graph_->remove_node(name);
     }
   }
@@ -87,7 +84,10 @@ CallbackReturnT AttentionNode::on_configure(const rclcpp_lifecycle::State& state
   ros2_knowledge_graph_msgs::msg::Node map = ros2_knowledge_graph::new_node("odom", "odom");
   graph_->update_node(map);
   graph_initialized_ = true;
-  objects_to_see_.push_back("cabinet");  // BORRAR
+
+  this->declare_parameter("objects");
+  objects_to_see_ = this->get_parameter("objects").as_string_array();
+
   return CallbackReturnT::SUCCESS;
 }
 CallbackReturnT AttentionNode::on_activate(const rclcpp_lifecycle::State& state) {

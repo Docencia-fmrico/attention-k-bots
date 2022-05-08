@@ -1,0 +1,5 @@
+graph_node_main:
+  ros__parameters:
+    use_sim_time: true
+    distance: 5.0
+    time: 3.0

@@ -38,6 +38,11 @@ CallbackReturnT NodeGraph::on_configure(const rclcpp_lifecycle::State& state) {
   RCLCPP_INFO(get_logger(), "[%s] Configuring from [%s] state...", get_name(),
               state.label().c_str());
 
+  this->declare_parameter("time");
+  fovea_time_ = this->get_parameter("time").as_double();
+
+  this->declare_parameter("distance");
+  distance_ = this->get_parameter("distance").as_double();
   return CallbackReturnT::SUCCESS;
 }
 CallbackReturnT NodeGraph::on_activate(const rclcpp_lifecycle::State& state) {
@@ -84,7 +89,6 @@ std::vector<std::string> NodeGraph::find_objects() {
       if (!edges_object.empty()) {
         for (auto edge : edges_object) {
           if (edge.content.string_value == "want_see") {
-            std::cout << edge.target_node_id << std::endl;
             names.push_back(edge.target_node_id);
           }
         }
@@ -124,7 +128,7 @@ void NodeGraph::select_object() {
     float tilt =
         atan2(transformStamped.transform.translation.z, transformStamped.transform.translation.x);
 
-    if (distance <= MAX_DISTANCE && (-M_PI_2 < pan && pan < M_PI_2)) {
+    if (distance <= distance_ && (-M_PI_2 < pan && pan < M_PI_2)) {
       objects_names_.push_back(fromFrameRel);
       std::vector<float> translation;
       translation.push_back(pan);
@@ -192,7 +196,6 @@ void NodeGraph::look_for_object() {
 void NodeGraph::do_work() {
   select_object();
 
-  std::cout << "Size: " << objects_names_.size() << std::endl;
   if (objects_names_.empty()) {
     look_for_object();
   } else {
@@ -231,7 +234,7 @@ void NodeGraph::do_work() {
             "kbot", objects_names_[object_to_see], "looking_at");
         graph_->update_edge(edge_string);
       }
-      if (now().seconds() - prev_look_to_ > 3) {
+      if (now().seconds() - prev_look_to_ > fovea_time_) {
         if (graph_->exist_node(objects_names_[object_to_see])) {
           auto edges_object = graph_->get_edges<std::string>("kbot", objects_names_[object_to_see]);
           if (!edges_object.empty()) {
@@ -246,13 +249,4 @@ void NodeGraph::do_work() {
       }
     }
   }
-
-  // rclcpp::Time start_watching_time = this->get_clock()->now();
-  //  while((this->get_clock()->now() - start_watching_time) < 1.0) {  }
-
-  // std::cout << "X: " << transformStamped.transform.translation.x
-  // << " Y: " << transformStamped.transform.translation.y
-  // << " Z: " << transformStamped.transform.translation.z << std::endl;
-
-  // std::cout << "PAN: " << pan * 180 / M_PI << " TILT: " << tilt * 180 / M_PI << std::endl;
 }

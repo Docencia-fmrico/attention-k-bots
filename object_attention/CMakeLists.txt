@@ -75,9 +75,10 @@ install(TARGETS
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
-install(DIRECTORY include/
-DESTINATION include/
-)
+
+install(DIRECTORY include/ DESTINATION include/)
+install(DIRECTORY launch params
+DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

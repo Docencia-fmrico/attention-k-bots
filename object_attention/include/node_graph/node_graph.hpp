@@ -35,12 +35,12 @@ class NodeGraph : public rclcpp_lifecycle::LifecycleNode {
   
   std::vector<std::string> objects_names_;
   std::vector<std::vector<float>> objects_angle_;
-
+  double fovea_time_ = 0.0;
+  double distance_ = 5.0;
   double prev_exploration_ = 0.0;
   double prev_look_to_ = 0.0;
   int size_points_ = 0;
   int object_to_see = 0;
-  float MAX_DISTANCE = 5;
 };
 
 #endif  // NODE_GRAPH_HPP_
