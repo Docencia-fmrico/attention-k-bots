@@ -11,7 +11,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     # Get the launch directory
-    example_dir = get_package_share_directory('object_attention')
+    example_dir = get_package_share_directory('stare_at_object')
     
     objects_file = os.path.join(example_dir, 'params/params.yaml')
     namespace = LaunchConfiguration('namespace')
@@ -24,7 +24,7 @@ def generate_launch_description():
 
     # Specify the actions
     move_cmd = Node(
-        package='object_attention',
+        package='stare_at_object',
         executable='stare_node',
         name='stare_node',
         output='screen',
