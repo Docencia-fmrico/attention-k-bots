@@ -14,18 +14,28 @@ En esta práctica realizaremos un sistema cognitivo sencillo donde se identifica
 ## Desarrollo
 
 
-**2 Nodos: *attention* y *object_attention***
+2 Nodos: *attention* y *stare_at_object*
 
 ### attention: 
-Añadimos cada objeto como nodo en el grafo y lo conectamos con el nodo odom.
-Luego, conectaremos los objetos que se desea mirar al nodo del robot (kbot) mediante el arco want_see.
+Añadimos todos los objetos de la escena en el grafo y lo conectamos con el nodo odom. Luego, conectamos los objetos que se desea mirar al nodo del robot (kbot) mediante el arco want_see.
 
 ![rosgraph](https://user-images.githubusercontent.com/78978037/167293557-3e53c63a-cd8e-4213-a16d-032a627cc185.png)
 
-### object_attention
+### stare_at_object
+En este nodo implementamos la tarea de mirar objetos.
 
 
 
+## Para ejecutar
+Lanzamos el primer launcher para el nodo attention, este launcher leerá de un fichero de parámetros yaml los objetos que se desea mirar 
+```
+ros2 launch attention attention_launch.py
+```
+
+A continuación, lanzamos el launcher del nodo stare_at_object, el cual leerá de un fichero de parámetros la distancia máxima a mirar y el tiempo que mantiene la mirada en caso de que haya varios objetos
+```
+ros2 launch stare_at_object stare_at_object_launch.py
+```
 
 
 
