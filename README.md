@@ -26,7 +26,7 @@ En este nodo implementamos la tarea de mirar objetos.
 
 
 
-## Para ejecutar
+## Cómo ejecutar
 Lanzamos el primer launcher para el nodo attention, este launcher leerá de un fichero de parámetros yaml los objetos que se desea mirar 
 ```
 ros2 launch attention attention_launch.py
